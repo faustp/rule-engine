@@ -1,0 +1,5 @@
+# This is a comment
+# Empty line OK, but not spaces
+local_ver=1.0.1004
+service_name=wrs
+company_prefix=tm

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="wrs.murlin.engine.cia" default="build" basedir=".">   
+
+    <!-- Error handling check and policy enforcement check -->
+
+    <target name="check-config">
+        <property name="prop.err.msg" value="internal_module.properties.xml and external_module.properties both must be defined and exist"/>
+        <available file="internal_module.properties.xml" property="internal_module.properties.xml.present"/>
+        <fail message="missing ${prop.err.msg}" unless="internal_module.properties.xml.present"/>
+        <available file="external_module.properties" property="external_module.properties.present"/>
+        <fail message="missing ${prop.err.msg}" unless="external_module.properties.present"/>
+        <available file="../../../../../../3rd_party/nblibraries.properties" property="3rdparty.properties.present"/>
+        <fail message="missing ../../../../../../3rd_party/nblibraries.properties" unless="3rdparty.properties.present"/>
+    </target>
+    
+    <import file="internal_module.properties.xml"/> 
+    
+    <!-- Build Script Properties --> 
+    <property name="build.dir" location="./build"/>
+    <property name="build.rel.dir" location="${build.dir}/release"/>
+    <property name="build.class.dir" location="${build.dir}/classes"/>
+    
+    <!-- Debug/Test Script Properties -->
+    <property name="test.dir" location="./build/debug"/>
+    <property name="test.class.dir" location="${test.dir}/classes"/>
+    <property name="test.data.dir" location="${test.dir}/data"/> 
+    <property name="test.reports.dir" location="${test.dir}/reports"/>
+
+    <!-- Other settings -->
+    <property name="switchdebug" value="off"/>
+	
+    <!-- This will load all ClassPath Variables to Property -->
+    <target name="init-libraries" depends="check-config">
+        <property location="../../../../../../3rd_party/nblibraries.properties" name="libraries.path"/>
+        <dirname file="${libraries.path}" property="libraries.dir.nativedirsep"/>
+        <pathconvert dirsep="/" property="libraries.dir">
+            <path path="${libraries.dir.nativedirsep}"/>
+        </pathconvert>
+        <basename file="${libraries.path}" property="libraries.basename" suffix=".properties"/>
+        <loadproperties encoding="ISO-8859-1" srcfile="${libraries.path}">
+            <filterchain>
+                <replacestring from="$${base}" to="${libraries.dir}"/>
+                <escapeunicode/>
+            </filterchain>
+        </loadproperties>
+    </target>
+
+    <!-- Initializ build requirements -->
+    <target name="init" depends="init-libraries">
+        <tstamp/>
+        <property file="external_module.properties"/>
+	<!-- Load Module Required Class Libraries on properties -->
+        <mkdir dir="${build.rel.dir}"/>
+        <mkdir dir="${build.class.dir}"/>
+        <!--echoproperties/-->
+    </target>
+
+    <!-- Initializ test requirements -->
+    <target name="init-test" depends="init-libraries">
+        <tstamp/>
+        <mkdir dir="${test.dir}"/>
+        <mkdir dir="${test.class.dir}"/>
+        <mkdir dir="${test.data.dir}"/>
+        <mkdir dir="${test.reports.dir}"/>
+    </target>
+
+    <!-- Compile build class files -->
+    <target name="compile" depends="init, pre-build">
+        <javac srcdir="src" debug="${switchdebug}" verbose="true" debuglevel="lines,vars,source" destdir="${build.class.dir}" includeantruntime="false">
+            <classpath path="${release.classpath}"/>
+        </javac>
+    </target>
+    
+    <!-- Compile test class files -->
+    <target name="test-compile" depends="compile, init-test">
+        <javac srcdir="test" debug="${switchdebug}" verbose="true" debuglevel="lines,vars,source" destdir="${test.class.dir}" includeantruntime="false">
+            <classpath path="${test.classpath}"/>
+        </javac>
+        <copy todir="${test.class.dir}">
+            <fileset dir="test" excludes="**/*.java"/>
+        </copy>
+    </target>
+
+    <target name="test" depends="compile, test-compile">
+        <junit fork="yes" 
+             printsummary="withOutAndErr"
+             haltonfailure="yes"
+             showoutput="yes"
+             errorProperty="test.failed"
+             failureProperty="test.failed">
+            <classpath path="${test.classpath}"/>
+            <formatter type="brief" usefile="false"/>
+            <formatter type="xml"/>
+            <batchtest todir="${test.data.dir}">
+                <fileset dir="${test.class.dir}" includes="**/*test*.class"/>
+            </batchtest>
+        </junit>
+
+        <junitreport todir="${test.data.dir}">
+            <fileset dir="${test.data.dir}">
+                <include name="TEST-*.xml"/>
+            </fileset>
+            <report format="frames" todir="${test.reports.dir}"/>
+        </junitreport>
+      
+        <fail message="Tests failed. Check log and/or reports." if="test.failed"/>
+    </target>
+    
+    <target name="copy-lib" depends="init">
+        <!--
+        <copy todir="dist/lib" flatten="true">
+          <path>
+            <pathelement path="${release.classpath}"/>
+          </path>
+        </copy>
+        -->
+    </target>
+
+    <target name="build.prep">
+        <mkdir dir="dist"/>
+        <!--<mkdir dir="dist/lib"/>-->
+    </target>
+
+    <target name="build" depends="compile, build.prep, copy-lib">
+        <jar jarfile="dist/wrs.murlin.engine.cia-${version}.jar" basedir="${build.class.dir}"></jar>
+    </target>
+
+    <target name="debug" depends="build">
+        <antcall target="dummytarget.toassign.newvalue">
+            <param name="switchdebug" value="on"/>
+        </antcall>
+        <jar jarfile="dist/wrs.murlin.engine.cia-${version}.jar" basedir="${build.class.dir}"></jar>
+        <jar jarfile="dist/wrs.murlin.engine.cia-test-${version}.jar" basedir="${test.class.dir}"></jar>
+    </target>
+
+    <target name="clean" depends="clean-build">
+        <delete dir="${build.dir}"/>
+        <delete file="BUILD_SUCCESS"/>
+    </target>
+
+    <target name="clean-build">
+        <delete dir="dist"/>
+    </target>
+
+    <target name="force" depends="clean, build">
+    </target>
+    
+    <target name="dummytarget.toassign.newvalue">
+    </target>
+
+</project>
+

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+    <property name="wrs.set.module.dir" location="../../../../../module/noarch/java"/>
+
+  <!-- wrs.common.murlin -->
+    <property name="wrs.common.murlin" location="${wrs.set.module.dir}/wrs.common.murlin/2.0"/>
+    <property file="${wrs.common.murlin}/VERSION" prefix="wrs.common.murlin"/>
+    <property name="libs.wrs.common.murlin.classpath" location="${wrs.common.murlin}/dist/wrs.common.murlin-${wrs.common.murlin.local_ver}.jar"/>
+  
+  <!-- wrs.common -->
+    <property name="wrs.common" location="${wrs.set.module.dir}/wrs.common/1.1"/>
+    <property file="${wrs.common}/VERSION" prefix="wrs.common"/>
+    <property name="libs.wrs.common.classpath" location="${wrs.common}/dist/wrs.common-${wrs.common.local_ver}.jar"/> 
+    
+  <!-- do NOT change the target name and depends value -->
+    <target name="pre-build" depends="init">
+        <echo message="building wrs.common.murlin-${wrs.common.murlin.local_ver} dependencies"/>
+        <exec executable="${wrs.common.murlin}/build.sh">
+            <arg line="-t -v ${global_ver}"/>
+        </exec>
+    </target>
+  
+</project>
